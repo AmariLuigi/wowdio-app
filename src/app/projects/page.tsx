@@ -59,6 +59,12 @@ export default function ProjectsPage() {
     setShowModal(false);
   }
 
+  function handleDelete(projectId: string) {
+    if (window.confirm("Are you sure you want to delete this project?")) {
+      setLocalProjects((prev) => (prev ?? projectList)?.filter((p) => p.id !== projectId));
+    }
+  }
+
   return (
     <main className="p-8">
       <div className="flex items-center justify-between mb-6">
@@ -90,7 +96,7 @@ export default function ProjectsPage() {
               <td className="p-2">
                 <button className="text-blue-600 hover:underline mr-2">View</button>
                 <button className="text-gray-600 hover:underline mr-2">Edit</button>
-                <button className="text-red-600 hover:underline">Delete</button>
+                <button className="text-red-600 hover:underline" onClick={() => handleDelete(project.id)}>Delete</button>
               </td>
             </tr>
           ))}
