@@ -76,32 +76,39 @@ export default function ProjectsPage() {
           + New Project
         </button>
       </div>
-      {isLoading && <div>Loading...</div>}
-      {error && <div>Error loading projects.</div>}
-      <table className="min-w-full border border-gray-200 rounded">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="p-2 text-left">Name</th>
-            <th className="p-2 text-left">Owner</th>
-            <th className="p-2 text-left">Created</th>
-            <th className="p-2 text-left">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {projectList?.map((project) => (
-            <tr key={project.id} className="border-t">
-              <td className="p-2 font-medium">{project.name}</td>
-              <td className="p-2">{getOwnerInfo(project.ownerId)}</td>
-              <td className="p-2">{new Date(project.createdAt).toLocaleDateString()}</td>
-              <td className="p-2">
-                <button className="text-blue-600 hover:underline mr-2">View</button>
-                <button className="text-gray-600 hover:underline mr-2">Edit</button>
-                <button className="text-red-600 hover:underline" onClick={() => handleDelete(project.id)}>Delete</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {isLoading && <div>Loading projects...</div>}
+      {error && <div className="text-red-600">Error loading projects.</div>}
+      {!isLoading && !error && (!projectList || projectList.length === 0) && (
+        <div className="text-gray-500 mt-8">No projects found. Create your first project!</div>
+      )}
+      {projectList && projectList.length > 0 && (
+        <div className="overflow-x-auto">
+          <table className="min-w-full border border-gray-200 rounded bg-white">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="p-2 text-left">Name</th>
+                <th className="p-2 text-left">Owner</th>
+                <th className="p-2 text-left">Created</th>
+                <th className="p-2 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {projectList.map((project) => (
+                <tr key={project.id} className="border-t">
+                  <td className="p-2 font-medium">{project.name}</td>
+                  <td className="p-2">{getOwnerInfo(project.ownerId)}</td>
+                  <td className="p-2">{new Date(project.createdAt).toLocaleDateString()}</td>
+                  <td className="p-2">
+                    <button className="text-blue-600 hover:underline mr-2">View</button>
+                    <button className="text-gray-600 hover:underline mr-2">Edit</button>
+                    <button className="text-red-600 hover:underline" onClick={() => handleDelete(project.id)}>Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
