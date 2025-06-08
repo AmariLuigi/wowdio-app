@@ -2,6 +2,9 @@
 import { fetchProjects, fetchUsers, Project, User } from "../../lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { MagicCard } from "@/components/magicui/magic-card";
+import { ShimmerButton } from "@/components/magicui/shimmer-button";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 
 export default function ProjectsPage() {
   const { data: projects, isLoading, error } = useQuery<Project[]>({
@@ -20,6 +23,9 @@ export default function ProjectsPage() {
   // Form state
   const [form, setForm] = useState({ name: "", ownerId: users?.[0]?.id || "" });
   const [formError, setFormError] = useState("");
+
+  // Add state for confirmation modal
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Use local projects if any, else fetched
   const projectList = localProjects ?? projects;
@@ -60,75 +66,86 @@ export default function ProjectsPage() {
   }
 
   function handleDelete(projectId: string) {
-    if (window.confirm("Are you sure you want to delete this project?")) {
-      setLocalProjects((prev) => (prev ?? projectList)?.filter((p) => p.id !== projectId));
+    setConfirmDeleteId(projectId);
+  }
+
+  function confirmDelete() {
+    if (confirmDeleteId) {
+      setLocalProjects((prev) => (prev ?? projectList)?.filter((p) => p.id !== confirmDeleteId));
+      setConfirmDeleteId(null);
     }
   }
 
+  function cancelDelete() {
+    setConfirmDeleteId(null);
+  }
+
   return (
-    <main className="p-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Projects</h1>
-        <button
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-          onClick={openModal}
-        >
-          + New Project
-        </button>
-      </div>
-      {isLoading && <div>Loading projects...</div>}
-      {error && <div className="text-red-600">Error loading projects.</div>}
-      {!isLoading && !error && (!projectList || projectList.length === 0) && (
-        <div className="text-gray-500 mt-8">No projects found. Create your first project!</div>
-      )}
-      {projectList && projectList.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="min-w-full border border-gray-200 rounded bg-white">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="p-2 text-left">Name</th>
-                <th className="p-2 text-left">Owner</th>
-                <th className="p-2 text-left">Created</th>
-                <th className="p-2 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {projectList.map((project) => (
-                <tr key={project.id} className="border-t">
-                  <td className="p-2 font-medium">{project.name}</td>
-                  <td className="p-2">{getOwnerInfo(project.ownerId)}</td>
-                  <td className="p-2">{new Date(project.createdAt).toLocaleDateString()}</td>
-                  <td className="p-2">
-                    <button className="text-blue-600 hover:underline mr-2">View</button>
-                    <button className="text-gray-600 hover:underline mr-2">Edit</button>
-                    <button className="text-red-600 hover:underline" onClick={() => handleDelete(project.id)}>Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+    <main className="min-h-screen flex flex-col items-center justify-start bg-white">
+      <div className="w-full max-w-5xl mx-auto px-4 pt-12">
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Projects</h1>
+          <ShimmerButton onClick={openModal}>+ New Project</ShimmerButton>
         </div>
-      )}
+        {isLoading && (
+          <div className="flex justify-center items-center h-40 text-lg text-gray-500">Loading projects...</div>
+        )}
+        {error && (
+          <div className="flex justify-center items-center h-40 text-lg text-red-600">Error loading projects.</div>
+        )}
+        {!isLoading && !error && (!projectList || projectList.length === 0) && (
+          <div className="flex flex-col items-center justify-center h-60 text-gray-400 text-lg">
+            No projects found. Create your first project!
+          </div>
+        )}
+        {projectList && projectList.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-4">
+            {projectList.map((project) => (
+              <MagicCard key={project.id} className="p-0 shadow-md rounded-2xl bg-white border border-gray-100">
+                <div className="p-6 flex flex-col gap-2">
+                  <h2 className="text-lg font-semibold mb-1">{project.name}</h2>
+                  <div className="text-sm text-gray-500 mb-2">
+                    Owner: <span className="font-medium">{getOwnerInfo(project.ownerId)}</span>
+                  </div>
+                  <div className="text-xs text-gray-400 mb-4">
+                    Created: {new Date(project.createdAt).toLocaleDateString()}
+                  </div>
+                  <div className="flex gap-2 mt-auto">
+                    <ShimmerButton className="px-3 py-1 text-sm">View</ShimmerButton>
+                    <ShimmerButton className="px-3 py-1 text-sm">Edit</ShimmerButton>
+                    <ShimmerButton
+                      className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white"
+                      onClick={() => handleDelete(project.id)}
+                    >
+                      Delete
+                    </ShimmerButton>
+                  </div>
+                </div>
+              </MagicCard>
+            ))}
+          </div>
+        )}
+      </div>
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded shadow-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Create Project</h2>
-            <form onSubmit={handleCreate}>
-              <div className="mb-4">
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4 text-center">Create Project</h2>
+            <form onSubmit={handleCreate} className="flex flex-col gap-4">
+              <div>
                 <label className="block mb-1 font-medium">Project Name</label>
                 <input
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border rounded px-3 py-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
                   name="name"
                   value={form.name}
                   onChange={handleFormChange}
                   required
                 />
               </div>
-              <div className="mb-4">
+              <div>
                 <label className="block mb-1 font-medium">Owner</label>
                 <select
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border rounded px-3 py-2 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
                   name="ownerId"
                   value={form.ownerId}
                   onChange={handleFormChange}
@@ -142,26 +159,33 @@ export default function ProjectsPage() {
                   ))}
                 </select>
               </div>
-              {formError && <div className="text-red-600 mb-2">{formError}</div>}
-              <div className="flex justify-end gap-2">
-                <button
+              {formError && <div className="text-red-600 mb-2 text-center">{formError}</div>}
+              <div className="flex justify-end gap-2 mt-2">
+                <ShimmerButton
                   type="button"
-                  className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+                  className="px-4 py-2"
                   onClick={() => setShowModal(false)}
                 >
                   Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-                >
+                </ShimmerButton>
+                <ShimmerButton type="submit" className="px-4 py-2">
                   Create
-                </button>
+                </ShimmerButton>
               </div>
             </form>
           </div>
         </div>
       )}
+      {/* Confirmation Modal for Delete */}
+      <ConfirmationModal
+        open={!!confirmDeleteId}
+        title="Delete Project"
+        message="Are you sure you want to delete this project? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
     </main>
   );
 } 
