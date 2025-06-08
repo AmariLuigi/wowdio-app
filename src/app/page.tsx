@@ -1,6 +1,13 @@
 import Image from "next/image";
+import { fetchUsers, User } from "../lib/api";
+import { useQuery } from "@tanstack/react-query";
 
-export default function Home() {
+export default function HomePage() {
+  const { data: users, isLoading, error } = useQuery<User[]>({
+    queryKey: ["users"],
+    queryFn: fetchUsers,
+  });
+
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
@@ -50,6 +57,20 @@ export default function Home() {
             Read our docs
           </a>
         </div>
+
+        <h1 className="text-2xl font-bold mb-4">Users</h1>
+        {isLoading && <div>Loading...</div>}
+        {error && <div>Error loading users.</div>}
+        <ul>
+          {users?.map((user) => (
+            <li key={user.id} className="mb-2 flex items-center gap-2">
+              {user.avatarUrl && (
+                <img src={user.avatarUrl} alt={user.name} className="w-8 h-8 rounded-full" />
+              )}
+              <span>{user.name} ({user.email})</span>
+            </li>
+          ))}
+        </ul>
       </main>
       <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
         <a
