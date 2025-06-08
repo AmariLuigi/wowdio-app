@@ -1,5 +1,5 @@
 "use client";
-import { fetchProjects, Project } from "../../lib/api";
+import { fetchProjects, fetchUsers, Project, User } from "../../lib/api";
 import { useQuery } from "@tanstack/react-query";
 
 export default function ProjectsPage() {
@@ -7,6 +7,15 @@ export default function ProjectsPage() {
     queryKey: ["projects"],
     queryFn: fetchProjects,
   });
+  const { data: users } = useQuery<User[]>({
+    queryKey: ["users"],
+    queryFn: fetchUsers,
+  });
+
+  function getOwnerInfo(ownerId: string) {
+    const owner = users?.find((u) => u.id === ownerId);
+    return owner ? `${owner.name} (${owner.email})` : ownerId;
+  }
 
   return (
     <main className="p-8">
@@ -31,7 +40,7 @@ export default function ProjectsPage() {
           {projects?.map((project) => (
             <tr key={project.id} className="border-t">
               <td className="p-2 font-medium">{project.name}</td>
-              <td className="p-2">{project.ownerId}</td>
+              <td className="p-2">{getOwnerInfo(project.ownerId)}</td>
               <td className="p-2">{new Date(project.createdAt).toLocaleDateString()}</td>
               <td className="p-2">
                 <button className="text-blue-600 hover:underline mr-2">View</button>
